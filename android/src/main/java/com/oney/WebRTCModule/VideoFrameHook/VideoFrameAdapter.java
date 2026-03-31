@@ -152,8 +152,8 @@ public class VideoFrameAdapter implements VideoSink {
         // 检查是否需要捕获帧
         boolean shouldCapture = frameCaptureEnabled && !frameListeners.isEmpty();
         boolean shouldSnapshot = false;
-        Log.e(TAG, "===== onFrame called: " + frame.getRotatedWidth() + "x" + frame.getRotatedHeight());
-        Log.e(TAG, "===== onFrame: shouldSnapshot=" + shouldSnapshot + ", requestSnapshot=" + captureConfig.requestSnapshot);
+        //Log.e(TAG, "===== onFrame called: " + frame.getRotatedWidth() + "x" + frame.getRotatedHeight());
+        //Log.e(TAG, "===== onFrame: shouldSnapshot=" + shouldSnapshot + ", requestSnapshot=" + captureConfig.requestSnapshot);
 
         if (captureConfig.requestSnapshot) {
             shouldSnapshot = true;
@@ -183,26 +183,35 @@ public class VideoFrameAdapter implements VideoSink {
             notifyFrameListeners(frame);
         }
 
-        // 处理截图请求
+        // 处理截图请求（异步）
         if (shouldSnapshot && snapshotListener != null) {
             Log.e(TAG, "===== onFrame: calling snapshot");
+            // 在异步使用前 retain frame
+            frame.retain();
             mainHandler.post(() -> {
-                VideoFrameCapturer capturer = new VideoFrameCapturer();
-                capturer.setListener(new VideoFrameCapturer.OnFrameCapturedListener() {
-                    @Override
-                    public void onFrameCaptured(android.graphics.Bitmap bitmap, long ts, int w, int h) {
-                        Log.e(TAG, "===== Snapshot captured: " + w + "x" + h);
-                        if (snapshotListener != null) {
-                            snapshotListener.onSnapshot(bitmap, ts);
+                Log.e(TAG, "===== onFrame: mainHandler.post called for snapshot");
+                try {
+                    VideoFrameCapturer capturer = new VideoFrameCapturer();
+                    capturer.setListener(new VideoFrameCapturer.OnFrameCapturedListener() {
+                        @Override
+                        public void onFrameCaptured(android.graphics.Bitmap bitmap, long ts, int w, int h) {
+                            Log.e(TAG, "===== onFrame:Snapshot captured: " + w + "x" + h);
+                            if (snapshotListener != null) {
+                                snapshotListener.onSnapshot(bitmap, ts);
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onError(String error) {
-                        Log.e(TAG, "Snapshot error: " + error);
-                    }
-                });
-                capturer.onFrame(frame);
+                        @Override
+                        public void onError(String error) {
+                            Log.e(TAG, "onFrame:Snapshot error: " + error);
+                        }
+                    });
+                    capturer.startCapture();
+                    capturer.onFrame(frame);
+                } finally {
+                    // 使用完毕后释放
+                    frame.release();
+                }
             });
         }
     }
