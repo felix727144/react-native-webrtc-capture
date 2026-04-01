@@ -1,92 +1,355 @@
+# react-native-webrtc (增强版 - 支持截图)
+
+> 📸 基于官方 react-native-webrtc 增强版本，新增 **VideoFrame 截图功能**（仅支持 Android）
+
+[![npm](https://img.shields.io/npm/v/react-native-webrtc.svg)](https://www.npmjs.com/package/react-native-webrtc)
+[![npm](https://img.shields.io/npm/dm/react-native-webrtc.svg)](https://www.npmjs.com/package/react-native-webrtc)
+[![Platform](https://img.shields.io/badge/platform-android-green.svg)](https://reactnative.dev/)
+
 ---
-AIGC:
-    ContentProducer: Minimax Agent AI
-    ContentPropagator: Minimax Agent AI
-    Label: AIGC
-    ProduceID: "00000000000000000000000000000000"
-    PropagateID: "00000000000000000000000000000000"
-    ReservedCode1: 3045022100c363960662ae1b59f2a161484c2100aadecc9662dfa6d39a8f8394c5a8d9b26802207e2526e1f6bdb73b528694f583b095ccc8540fbd02cc8ec51809d9a13a663c6c
-    ReservedCode2: 3046022100b6985eed539da21369325eb912f1ba6c939b955f862baa748c63ff5a21894cfa0221008dce700ed94b3f0c389cc688e9b3da34909f331a2e17018d1a81c50dc316f621
+
+## 📖 项目简介
+
+本项目源自 [react-native-webrtc](https://github.com/react-native-webrtc/react-native-webrtc)，由于原项目没有提供截图功能，我们使用 **Minimax** 和 **Qwen** AI 助手修改了源码，增加了实时视频帧截图功能。
+
+**当前状态：**
+- ✅ Android 截图功能已实现
+- ❌ iOS 截图功能（待实现）
+
 ---
 
-[<img src="https://avatars.githubusercontent.com/u/42463376" alt="React Native WebRTC" style="height: 6em;" />](https://github.com/react-native-webrtc/react-native-webrtc)
+## 🚀 快速开始
 
-# React-Native-WebRTC
+### 1. 安装依赖
 
-[![npm version](https://img.shields.io/npm/v/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
-[![npm downloads](https://img.shields.io/npm/dm/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
-[![Discourse topics](https://img.shields.io/discourse/topics?server=https%3A%2F%2Freact-native-webrtc.discourse.group%2F)](https://react-native-webrtc.discourse.group/)
+```bash
+cd examples/GumTestApp
+npm install
+```
 
-A WebRTC module for React Native.
+### 2. 启动开发服务器
 
-## Feature Overview
+```bash
+# 启动 Metro Bundler
+npm start
 
-|  | Android | iOS | tvOS | macOS* | Windows* | Web* | Expo* |
-| :- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| Audio/Video | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
-| Data Channels | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
-| Screen Capture | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
-| Plan B | - | - | - | - | - | - | - |
-| Unified Plan* | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
-| Simulcast* | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
+# 或者在新终端中
+npx react-native start
+```
 
-> **macOS** - We don't currently actively support macOS at this time.  
-Support might return in the future.
+### 3. 运行应用
 
-> **Windows** - We don't currently support the [react-native-windows](https://github.com/microsoft/react-native-windows) platform at this time.  
-Anyone interested in getting the ball rolling? We're open to contributions.
+```bash
+# Android
+npm run android
 
-> **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for [react-native-web](https://github.com/necolas/react-native-web) support.  
-Which will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the exact same code in your [react-native-web](https://github.com/necolas/react-native-web) project as you would with [react-native](https://reactnative.dev/) directly.  
+# 或者
+npx react-native run-android
+```
 
-> **Expo** - As this module includes native code it is not available in the [Expo Go](https://expo.dev/client) app by default.  
-However you can get things working via the [expo-dev-client](https://docs.expo.dev/development/getting-started/) library and out-of-tree [config-plugins/react-native-webrtc](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc) package.  
+---
 
-> **Unified Plan** - As of version 106.0.0 Unified Plan is the only supported mode.  
-Those still in need of Plan B will need to use an older release.
+## 📸 截图功能使用指南
 
-> **Simulcast** - As of version 111.0.0 Simulcast is now possible with ease.  
-Software encode/decode factories have been enabled by default.
+### API 说明
 
-## WebRTC Revision
+#### `VideoFrameCaptureModule.captureFrame(trackId)`
 
-* Currently used revision: [M124](https://github.com/jitsi/webrtc/tree/M124)
-* Supported architectures
-  * Android: armeabi-v7a, arm64-v8a, x86, x86_64
-  * iOS: arm64, x86_64
-  * tvOS: arm64
-  * macOS: arm64, x86_64
+捕获指定视频轨道的当前帧。
 
-## Getting Started
+**参数：**
+- `trackId` (string): 视频轨道的 ID
 
-Use one of the following preferred package install methods to immediately get going.  
-Don't forget to follow platform guides below to cover any extra required steps.  
+**返回值：**
+- `Promise<{ success: boolean, data?: string, error?: string }>`
+  - `success`: 是否成功
+  - `data`: Base64 编码的 JPEG 图片（成功时）
+  - `error`: 错误信息（失败时）
 
-**npm:** `npm install react-native-webrtc --save`  
-**yarn:** `yarn add react-native-webrtc`  
-**pnpm:** `pnpm install react-native-webrtc`  
+### 使用示例
 
-## Guides
+```javascript
+import { mediaDevices, VideoFrameCaptureModule } from 'react-native-webrtc';
 
-- [Android Install](./Documentation/AndroidInstallation.md)
-- [iOS Install](./Documentation/iOSInstallation.md)
-- [tvOS Install](./Documentation/tvOSInstallation.md)
-- [Basic Usage](./Documentation/BasicUsage.md)
-- [Step by Step Call Guide](./Documentation/CallGuide.md)
-- [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
-- [Migrating to Unified Plan](https://docs.google.com/document/d/1-ZfikoUtoJa9k-GZG1daN0BU3IjIanQ_JSscHxQesvU/edit#heading=h.wuu7dx8tnifl)
+async function takeSnapshot() {
+  try {
+    // 获取本地视频流
+    const stream = await mediaDevices.getUserMedia({
+      video: {
+        facingMode: 'user',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    });
 
-## Example Projects
+    // 获取视频轨道 ID
+    const videoTrack = stream.getVideoTracks()[0];
+    const trackId = videoTrack.id;
 
-We have some very basic example projects included in the [examples](./examples) directory.  
-Don't worry, there are plans to include a much more broader example with backend included.  
+    console.log('Track ID:', trackId);
 
-## Community
+    // 调用截图功能
+    const result = await VideoFrameCaptureModule.captureFrame(trackId);
 
-Come join our [Discourse Community](https://react-native-webrtc.discourse.group/) if you want to discuss any React Native and WebRTC related topics.  
-Everyone is welcome and every little helps.  
+    if (result.success) {
+      console.log('截图成功！');
+      // result.data 是 Base64 格式的 JPEG 图片
+      const imageUri = `data:image/jpeg;base64,${result.data}`;
+      
+      // 可以用于显示、保存或上传
+      // 例如：<Image source={{ uri: imageUri }} />
+    } else {
+      console.error('截图失败:', result.error);
+    }
+  } catch (error) {
+    console.error('错误:', error);
+  }
+}
+```
 
-## Related Projects
+### 完整示例代码
 
-Looking for extra functionality coverage?  
-The [react-native-webrtc](https://github.com/react-native-webrtc) organization provides a number of packages which are more than useful when developing Real Time Communication applications.  
+```javascript
+import React, { useState, useRef } from 'react';
+import { View, Button, Image, StyleSheet } from 'react-native';
+import {
+  mediaDevices,
+  RTCView,
+  VideoFrameCaptureModule
+} from 'react-native-webrtc';
+
+export default function App() {
+  const [stream, setStream] = useState(null);
+  const [snapshot, setSnapshot] = useState(null);
+  const streamRef = useRef(null);
+
+  const startCamera = async () => {
+    try {
+      const newStream = await mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      setStream(newStream);
+      streamRef.current = newStream;
+    } catch (error) {
+      console.error('启动摄像头失败:', error);
+    }
+  };
+
+  const takeSnapshot = async () => {
+    if (!streamRef.current) {
+      alert('请先启动摄像头');
+      return;
+    }
+
+    try {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      const result = await VideoFrameCaptureModule.captureFrame(videoTrack.id);
+
+      if (result.success) {
+        setSnapshot(`data:image/jpeg;base64,${result.data}`);
+        console.log('截图成功！尺寸:', result.width, 'x', result.height);
+      } else {
+        alert('截图失败：' + result.error);
+      }
+    } catch (error) {
+      console.error('截图错误:', error);
+      alert('截图异常：' + error.message);
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+      setStream(null);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.videoContainer}>
+        {stream && <RTCView streamURL={stream.toURL()} style={styles.video} />}
+      </View>
+
+      {snapshot && (
+        <View style={styles.snapshotContainer}>
+          <Image source={{ uri: snapshot }} style={styles.snapshot} />
+        </View>
+      )}
+
+      <View style={styles.buttonRow}>
+        <Button title="启动摄像头" onPress={startCamera} />
+        <Button title="截图" onPress={takeSnapshot} />
+        <Button title="停止" onPress={stopCamera} />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  videoContainer: {
+    flex: 1,
+  },
+  video: {
+    flex: 1,
+  },
+  snapshotContainer: {
+    height: 200,
+    margin: 10,
+    backgroundColor: '#333',
+  },
+  snapshot: {
+    flex: 1,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
+  },
+});
+```
+
+---
+
+## 🔧 技术实现细节
+
+### 核心修改
+
+截图功能通过以下核心组件实现：
+
+1. **VideoFrameAdapter** - 拦截 WebRTC 视频帧
+2. **VideoFrameCapturer** - 将 YUV 帧转换为 Bitmap
+3. **VideoFrameCaptureModule** - React Native 原生模块接口
+
+### 视频处理流程
+
+```
+摄像头 → NV21/NV12 → MediaCodec → TextureBuffer (GPU)
+                                      ↓
+                              VideoFrameAdapter (拦截)
+                                      ↓
+                              toI420() 转换
+                                      ↓
+                              YUV → JPEG 压缩
+                                      ↓
+                              Base64 编码 → JavaScript
+```
+
+### 关键文件
+
+```
+android/src/main/java/com/oney/WebRTCModule/
+├── VideoFrameHook/
+│   ├── VideoFrameAdapter.java      # 视频帧拦截器
+│   └── VideoFrameCapturer.java     # 帧捕获和转换
+├── VideoFrameCaptureModule.java    # React Native 模块
+└── WebRTCModule.java               # 主模块（包含截图逻辑）
+```
+
+---
+
+## 📋 API 参考
+
+### `mediaDevices.getUserMedia(constraints)`
+
+获取本地媒体流。
+
+```javascript
+const stream = await mediaDevices.getUserMedia({
+  video: {
+    facingMode: 'user',  // 'user' | 'environment'
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30 }
+  },
+  audio: true
+});
+```
+
+### `VideoFrameCaptureModule.captureFrame(trackId)`
+
+捕获视频帧。
+
+```javascript
+const result = await VideoFrameCaptureModule.captureFrame(trackId);
+// result: { success: true, data: "base64...", width: 1280, height: 720 }
+```
+
+---
+
+## 🐛 已知问题
+
+1. **仅支持 Android** - iOS 版本尚未实现
+2. **性能影响** - 截图时会轻微影响视频渲染性能
+3. **内存占用** - 高分辨率截图会暂时增加内存使用
+
+---
+
+## 🛠️ 开发调试
+
+### 查看日志
+
+```bash
+# Android Logcat
+adb logcat | grep -E "VideoFrame|WebRTC"
+
+# 过滤截图相关日志
+adb logcat | grep "VideoFrameCapturer"
+```
+
+### 关键日志输出
+
+```
+===== convertToBitmap: Buffer class = org.webrtc.TextureBufferImpl
+===== convertToBitmap: frame size = 1280x720
+===== convertToBitmap: I420 size = 1280x720
+===== YUV stats (fixed): Y avg=128, U avg=180, V avg=150
+===== JPEG size: 145663
+===== Bitmap created: 1280x720
+```
+
+---
+
+## 📚 参考资料
+
+- [官方 react-native-webrtc](https://github.com/react-native-webrtc/react-native-webrtc)
+- [WebRTC 官方文档](https://webrtc.org/)
+- [React Native 文档](https://reactnative.dev/)
+
+---
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+### 待实现功能
+
+- [ ] iOS 截图支持
+- [ ] 视频录制功能
+- [ ] 实时滤镜处理
+- [ ] 自定义分辨率/质量设置
+
+---
+
+## 📄 许可证
+
+本项目遵循与原始项目相同的许可证（MIT License）。
+
+---
+
+## 🙏 致谢
+
+- 感谢 [react-native-webrtc](https://github.com/react-native-webrtc/react-native-webrtc) 团队的基础工作
+- 感谢 **Minimax** 和 **Qwen** AI 助手在开发过程中的技术支持
+
+---
+
+**最后更新：** 2026 年 4 月 1 日
