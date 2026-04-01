@@ -147,30 +147,85 @@ public class VideoFrameCapturer {
         VideoFrame.I420Buffer i420Buffer = null;
 
         try {
+            // 打印 Buffer 类型信息
+            String bufferClass = buffer.getClass().getName();
+            Log.e(TAG, "===== convertToBitmap: Buffer class = " + bufferClass);
+            Log.e(TAG, "===== convertToBitmap: frame size = " + frame.getRotatedWidth() + "x" + frame.getRotatedHeight());
+
             // 转换为 I420 格式
             i420Buffer = buffer.toI420();
 
             int width = i420Buffer.getWidth();
             int height = i420Buffer.getHeight();
 
-            // 获取 YUV 数据并复制出来
+            Log.e(TAG, "===== convertToBitmap: I420 size = " + width + "x" + height);
+            Log.e(TAG, "===== convertToBitmap: strides Y=" + i420Buffer.getStrideY() 
+                + ", U=" + i420Buffer.getStrideU() 
+                + ", V=" + i420Buffer.getStrideV());
+
+            // 获取 YUV 数据（包含 stride 填充）
+            int yStride = i420Buffer.getStrideY();
+            int uStride = i420Buffer.getStrideU();
+            int vStride = i420Buffer.getStrideV();
+            int uvHeight = height / 2;
+
+            Log.e(TAG, "===== Reading YUV with strides: Y=" + yStride + ", U=" + uStride + ", V=" + vStride);
+
+            ByteBuffer yBuffer = i420Buffer.getDataY();
+            ByteBuffer uBuffer = i420Buffer.getDataU();
+            ByteBuffer vBuffer = i420Buffer.getDataV();
+
+            // 打印 Buffer 容量信息
+            Log.e(TAG, "===== Buffer capacity: Y=" + yBuffer.capacity() + ", U=" + uBuffer.capacity() + ", V=" + vBuffer.capacity());
+
+            // 使用 buffer 实际容量分配数组（避免 BufferUnderflowException）
+            byte[] yDataFull = new byte[yBuffer.capacity()];
+            byte[] uDataFull = new byte[uBuffer.capacity()];
+            byte[] vDataFull = new byte[vBuffer.capacity()];
+
+            Log.e(TAG, "===== Data arrays size: Y=" + yDataFull.length + ", U=" + uDataFull.length + ", V=" + vDataFull.length);
+
+            yBuffer.get(yDataFull);
+            uBuffer.get(uDataFull);
+            vBuffer.get(vDataFull);
+
+            // 提取实际数据（去除 stride 填充）
             byte[] yData = new byte[width * height];
             byte[] uData = new byte[width * height / 4];
             byte[] vData = new byte[width * height / 4];
 
-            i420Buffer.getDataY().get(yData);
-            i420Buffer.getDataU().get(uData);
-            i420Buffer.getDataV().get(vData);
+            for (int j = 0; j < height; j++) {
+                System.arraycopy(yDataFull, j * yStride, yData, j * width, width);
+            }
+
+            int uvWidth = width / 2;
+            for (int j = 0; j < uvHeight; j++) {
+                System.arraycopy(uDataFull, j * uStride, uData, j * uvWidth, uvWidth);
+                System.arraycopy(vDataFull, j * vStride, vData, j * uvWidth, uvWidth);
+            }
+
+            // 打印 YUV 统计信息用于调试
+            int ySum = 0, uSum = 0, vSum = 0;
+            for (byte b : yData) ySum += (b & 0xff);
+            for (byte b : uData) uSum += (b & 0xff);
+            for (byte b : vData) vSum += (b & 0xff);
+            Log.e(TAG, "===== YUV stats (fixed): Y avg=" + (ySum / yData.length)
+                + ", U avg=" + (uSum / uData.length)
+                + ", V avg=" + (vSum / vData.length));
+
+            // 保存原始 YUV 数据用于调试（可选）
+            saveYuvData(yData, uData, vData, width, height);
 
             // 创建 NV21 格式数据
+            // NV21 格式：Y 平面 + VU 交错排列（注意是 VU 不是 UV）
             byte[] nv21 = new byte[width * height * 3 / 2];
             System.arraycopy(yData, 0, nv21, 0, width * height);
 
-            // 交错排列 U 和 V
+            // 交错排列 V 和 U（NV21 是 V 在前，U 在后）
             int uvSize = width * height / 4;
             for (int i = 0; i < uvSize; i++) {
-                nv21[width * height + i * 2] = vData[i];
-                nv21[width * height + i * 2 + 1] = uData[i];
+                nv21[width * height + i * 2] = vData[i];     // V
+                nv21[width * height + i * 2 + 1] = uData[i]; // U
             }
 
             // 创建 YuvImage
@@ -191,15 +246,20 @@ public class VideoFrameCapturer {
             );
 
             if (!success) {
+                Log.e(TAG, "===== compressToJpeg failed");
                 return null;
             }
 
             byte[] jpegData = outputStream.toByteArray();
+            Log.e(TAG, "===== JPEG size: " + jpegData.length);
 
             // 解码为 Bitmap
             android.graphics.BitmapFactory.Options options = new android.graphics.BitmapFactory.Options();
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-            return android.graphics.BitmapFactory.decodeByteArray(jpegData, 0, jpegData.length);
+            Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(jpegData, 0, jpegData.length);
+            
+            Log.e(TAG, "===== Bitmap created: " + bitmap.getWidth() + "x" + bitmap.getHeight());
+            return bitmap;
         } catch (Exception e) {
             Log.e(TAG, "convertToBitmap error: " + e.getMessage(), e);
             return null;
@@ -209,6 +269,40 @@ public class VideoFrameCapturer {
                 i420Buffer.release();
             }
         }
+    }
+
+    /**
+     * 保存原始 YUV 数据到文件（用于 Python 分析）
+     * 文件格式：Y 平面 + U 平面 + V 平面（I420 格式）
+     */
+    private void saveYuvData(byte[] yData, byte[] uData, byte[] vData, int width, int height) {
+        new Thread(() -> {
+            try {
+                String timestamp = String.valueOf(System.currentTimeMillis());
+                String yuvPath = "/sdcard/Download/frame_" + timestamp + "_" + width + "x" + height + ".i420";
+                
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(yuvPath);
+                fos.write(yData);
+                fos.write(uData);
+                fos.write(vData);
+                fos.close();
+                
+                Log.e(TAG, "===== YUV data saved to: " + yuvPath);
+                Log.e(TAG, "===== Y size: " + yData.length + ", U size: " + uData.length + ", V size: " + vData.length);
+                
+                // 同时保存为 YUV420P 格式（用于 FFmpeg）
+                String yuv420pPath = "/sdcard/Download/frame_" + timestamp + "_" + width + "x" + height + ".yuv420p";
+                fos = new java.io.FileOutputStream(yuv420pPath);
+                fos.write(yData);
+                fos.write(uData);
+                fos.write(vData);
+                fos.close();
+                
+                Log.e(TAG, "===== YUV420P data saved to: " + yuv420pPath);
+            } catch (Exception e) {
+                Log.e(TAG, "saveYuvData error: " + e.getMessage(), e);
+            }
+        }).start();
     }
 
     /**
