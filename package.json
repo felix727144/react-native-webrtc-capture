@@ -1,13 +1,13 @@
 {
-  "name": "react-native-webrtc",
+  "name": "react-native-webrtc-capture",
   "version": "1.0.1",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/huban/react-native-webrtc.git"
+    "url": "git+https://github.com/felix727144/react-native-webrtc-capture.git"
   },
   "description": "Fork of react-native-webrtc with VideoFrame Hook - AI Analysis, Screenshot, Encoding",
   "license": "MIT",
-  "homepage": "https://github.com/huban/react-native-webrtc",
+  "homepage": "https://github.com/felix727144/react-native-webrtc-capture.git",
   "keywords": [
     "react-component",
     "react-native",
@@ -40,9 +40,6 @@
     "format": "tools/format.sh",
     "build": "bob build",
     "clean": "bob build --clean"
-  },
-  "bugs": {
-    "url": "https://github.com/huban/react-native-webrtc/issues"
   },
   "devDependencies": {
     "@types/debug": "4.1.7",
